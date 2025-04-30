@@ -1,0 +1,1046 @@
+<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Географические Flash Cards | Изучайте географию легко</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+        
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        
+        .card {
+            perspective: 1000px;
+            transform-style: preserve-3d;
+            transition: all 0.5s ease;
+        }
+        
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.8s;
+        }
+        
+        .card.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+        
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-back {
+            transform: rotateY(180deg);
+        }
+        
+        .progress-bar {
+            transition: width 0.5s ease;
+        }
+        
+        .category-btn.active {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+        }
+        
+        .floating-btn {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        
+        .globe-spin {
+            animation: spin 20s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-6 shadow-lg">
+        <div class="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center">
+            <div class="flex items-center mb-4 md:mb-0">
+                <i class="fas fa-globe-americas text-3xl mr-3 globe-spin"></i>
+                <h1 class="text-2xl md:text-3xl font-bold">Географические Flash Cards</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="hidden md:block">
+                    <span class="font-semibold">Прогресс:</span>
+                    <div class="w-32 bg-gray-200 rounded-full h-2.5 inline-block ml-2">
+                        <div id="global-progress" class="bg-yellow-400 h-2.5 rounded-full progress-bar" style="width: 0%"></div>
+                    </div>
+                    <span id="progress-percent" class="ml-2">0%</span>
+                </div>
+                <button id="stats-btn" class="bg-white text-blue-600 px-4 py-2 rounded-lg font-semibold hover:bg-blue-50 transition">
+                    <i class="fas fa-chart-bar mr-2"></i>Статистика
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Categories -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold mb-6 text-center">Выберите категорию</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <button class="category-btn bg-gradient-to-br from-green-400 to-blue-500 text-white py-4 px-2 rounded-xl shadow-md transition hover:shadow-lg" data-category="general">
+                    <i class="fas fa-globe text-3xl mb-2"></i>
+                    <h3 class="font-bold">Общая география</h3>
+                </button>
+                <button class="category-btn bg-gradient-to-br from-yellow-400 to-orange-500 text-white py-4 px-2 rounded-xl shadow-md transition hover:shadow-lg" data-category="continents">
+                    <i class="fas fa-mountain text-3xl mb-2"></i>
+                    <h3 class="font-bold">Континенты</h3>
+                </button>
+                <button class="category-btn bg-gradient-to-br from-purple-400 to-pink-500 text-white py-4 px-2 rounded-xl shadow-md transition hover:shadow-lg" data-category="countries">
+                    <i class="fas fa-flag text-3xl mb-2"></i>
+                    <h3 class="font-bold">Страны</h3>
+                </button>
+                <button class="category-btn bg-gradient-to-br from-red-400 to-purple-500 text-white py-4 px-2 rounded-xl shadow-md transition hover:shadow-lg" data-category="records">
+                    <i class="fas fa-trophy text-3xl mb-2"></i>
+                    <h3 class="font-bold">Рекорды</h3>
+                </button>
+            </div>
+        </section>
+
+        <!-- Flash Cards Section -->
+        <section>
+            <div class="max-w-3xl mx-auto">
+                <!-- Card Navigation -->
+                <div class="flex justify-between items-center mb-6">
+                    <button id="prev-card" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-full transition">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <div class="text-center">
+                        <span id="current-card-number" class="font-bold text-lg">1</span>
+                        <span class="mx-2">из</span>
+                        <span id="total-cards" class="font-bold text-lg">10</span>
+                    </div>
+                    <button id="next-card" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-full transition">
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="w-full bg-gray-200 rounded-full h-2.5 mb-6">
+                    <div id="category-progress" class="bg-blue-600 h-2.5 rounded-full progress-bar" style="width: 0%"></div>
+                </div>
+
+                <!-- Flash Card -->
+                <div id="flash-card" class="card cursor-pointer h-96 mb-8">
+                    <div class="card-inner h-full">
+                        <div class="card-front bg-white flex flex-col justify-center items-center">
+                            <div id="card-question" class="text-2xl font-bold text-center mb-4"></div>
+                            <div id="card-hint" class="text-gray-500 italic mb-6"></div>
+                            <div class="text-blue-500 font-semibold">Нажмите, чтобы увидеть ответ</div>
+                            <i class="fas fa-sync-alt mt-4 text-gray-400"></i>
+                        </div>
+                        <div class="card-back bg-blue-600 text-white">
+                            <div id="card-answer" class="text-2xl font-bold text-center mb-4"></div>
+                            <div id="card-explanation" class="text-white text-opacity-90 mb-6"></div>
+                            <div class="flex space-x-4 mt-4">
+                                <button class="difficulty-btn bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition" data-difficulty="hard">
+                                    <i class="fas fa-times mr-2"></i>Сложно
+                                </button>
+                                <button class="difficulty-btn bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg transition" data-difficulty="medium">
+                                    <i class="fas fa-check mr-2"></i>Нормально
+                                </button>
+                                <button class="difficulty-btn bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition" data-difficulty="easy">
+                                    <i class="fas fa-thumbs-up mr-2"></i>Легко
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Navigation -->
+                <div class="flex justify-center space-x-2 mb-8">
+                    <button class="quick-nav-btn bg-gray-200 hover:bg-gray-300 w-10 h-10 rounded-full transition flex items-center justify-center" data-index="0">1</button>
+                    <button class="quick-nav-btn bg-gray-200 hover:bg-gray-300 w-10 h-10 rounded-full transition flex items-center justify-center" data-index="1">2</button>
+                    <button class="quick-nav-btn bg-gray-200 hover:bg-gray-300 w-10 h-10 rounded-full transition flex items-center justify-center" data-index="2">3</button>
+                    <span class="flex items-center">...</span>
+                    <button class="quick-nav-btn bg-gray-200 hover:bg-gray-300 w-10 h-10 rounded-full transition flex items-center justify-center" data-index="9">10</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Additional Features -->
+        <section class="max-w-3xl mx-auto mt-12">
+            <h2 class="text-2xl font-bold mb-6 text-center">Дополнительные функции</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition">
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-random text-blue-500 text-2xl mr-3"></i>
+                        <h3 class="font-bold text-lg">Случайная карточка</h3>
+                    </div>
+                    <p class="text-gray-600 mb-4">Проверьте свои знания по случайной теме из всех категорий</p>
+                    <button id="random-card" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition w-full">
+                        <i class="fas fa-random mr-2"></i>Показать случайную карточку
+                    </button>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition">
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-star text-yellow-500 text-2xl mr-3"></i>
+                        <h3 class="font-bold text-lg">Сложные карточки</h3>
+                    </div>
+                    <p class="text-gray-600 mb-4">Повторите карточки, которые вы отметили как сложные</p>
+                    <button id="review-hard" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg transition w-full">
+                        <i class="fas fa-brain mr-2"></i>Повторить сложные
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Stats Modal -->
+    <div id="stats-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold">Ваша статистика</h2>
+                <button id="close-stats" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="bg-blue-50 p-4 rounded-lg">
+                    <h3 class="font-bold text-lg mb-2 text-blue-800">Общий прогресс</h3>
+                    <div class="flex items-center">
+                        <div class="w-3/4 bg-gray-200 rounded-full h-4">
+                            <div id="modal-global-progress" class="bg-blue-600 h-4 rounded-full" style="width: 0%"></div>
+                        </div>
+                        <span id="modal-global-percent" class="ml-2 font-bold">0%</span>
+                    </div>
+                </div>
+                <div class="bg-green-50 p-4 rounded-lg">
+                    <h3 class="font-bold text-lg mb-2 text-green-800">Изучено карточек</h3>
+                    <div class="flex items-center">
+                        <span id="learned-cards" class="text-2xl font-bold mr-2">0</span>
+                        <span>из</span>
+                        <span id="total-cards-stats" class="text-2xl font-bold ml-2">40</span>
+                    </div>
+                </div>
+            </div>
+            
+            <h3 class="font-bold text-lg mb-3">Прогресс по категориям</h3>
+            <div class="space-y-4 mb-6">
+                <div>
+                    <div class="flex justify-between mb-1">
+                        <span class="font-medium">Общая география</span>
+                        <span id="general-progress" class="font-medium">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                        <div id="general-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between mb-1">
+                        <span class="font-medium">Континенты</span>
+                        <span id="continents-progress" class="font-medium">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                        <div id="continents-bar" class="bg-yellow-500 h-2.5 rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between mb-1">
+                        <span class="font-medium">Страны</span>
+                        <span id="countries-progress" class="font-medium">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                        <div id="countries-bar" class="bg-purple-500 h-2.5 rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between mb-1">
+                        <span class="font-medium">Рекорды</span>
+                        <span id="records-progress" class="font-medium">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                        <div id="records-bar" class="bg-red-500 h-2.5 rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <h3 class="font-bold text-lg mb-3">Сложность карточек</h3>
+            <div class="grid grid-cols-3 gap-4 mb-6">
+                <div class="bg-green-100 p-3 rounded-lg text-center">
+                    <div class="text-green-800 font-bold text-2xl mb-1" id="easy-cards">0</div>
+                    <div class="text-green-600">Легкие</div>
+                </div>
+                <div class="bg-yellow-100 p-3 rounded-lg text-center">
+                    <div class="text-yellow-800 font-bold text-2xl mb-1" id="medium-cards">0</div>
+                    <div class="text-yellow-600">Средние</div>
+                </div>
+                <div class="bg-red-100 p-3 rounded-lg text-center">
+                    <div class="text-red-800 font-bold text-2xl mb-1" id="hard-cards">0</div>
+                    <div class="text-red-600">Сложные</div>
+                </div>
+            </div>
+            
+            <button id="reset-stats" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg transition w-full">
+                <i class="fas fa-trash-alt mr-2"></i>Сбросить статистику
+            </button>
+        </div>
+    </div>
+
+    <!-- Floating Action Button -->
+    <div class="fixed bottom-6 right-6">
+        <button id="floating-btn" class="floating-btn bg-blue-600 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl hover:bg-blue-700 transition">
+            <i class="fas fa-question"></i>
+        </button>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="help-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold">Как пользоваться Flash Cards</h2>
+                <button id="close-help" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div class="flex items-start">
+                    <div class="bg-blue-100 text-blue-800 rounded-full w-8 h-8 flex items-center justify-center mr-3 flex-shrink-0">
+                        <i class="fas fa-book-open"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-lg mb-1">Выбор категории</h3>
+                        <p class="text-gray-600">Начните с выбора одной из четырех категорий: Общая география, Континенты, Страны или Рекорды. Каждая категория содержит 10 уникальных карточек.</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start">
+                    <div class="bg-green-100 text-green-800 rounded-full w-8 h-8 flex items-center justify-center mr-3 flex-shrink-0">
+                        <i class="fas fa-mouse-pointer"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-lg mb-1">Использование карточек</h3>
+                        <p class="text-gray-600">Нажмите на карточку, чтобы перевернуть ее и увидеть ответ. После просмотра ответа оцените, насколько легко вам было ответить на вопрос.</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start">
+                    <div class="bg-yellow-100 text-yellow-800 rounded-full w-8 h-8 flex items-center justify-center mr-3 flex-shrink-0">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-lg mb-1">Отслеживание прогресса</h3>
+                        <p class="text-gray-600">Система запоминает, какие карточки вы уже изучили и как вы оценили их сложность. Вы можете просматривать статистику в любое время.</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start">
+                    <div class="bg-purple-100 text-purple-800 rounded-full w-8 h-8 flex items-center justify-center mr-3 flex-shrink-0">
+                        <i class="fas fa-random"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-lg mb-1">Дополнительные функции</h3>
+                        <p class="text-gray-600">Используйте кнопку "Случайная карточка" для проверки знаний по всем темам или "Повторить сложные" для работы с карточками, которые вызвали у вас затруднения.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-6 bg-blue-50 p-4 rounded-lg">
+                <h3 class="font-bold text-lg mb-2 text-blue-800">Советы по обучению</h3>
+                <ul class="list-disc pl-5 space-y-2 text-gray-700">
+                    <li>Регулярно повторяйте материал - оптимально 2-3 раза в неделю</li>
+                    <li>Сначала попробуйте ответить на вопрос самостоятельно, затем проверьте ответ</li>
+                    <li>Сложные карточки просматривайте чаще</li>
+                    <li>Используйте метод интервального повторения для лучшего запоминания</li>
+                </ul>
+            </div>
+            
+            <button id="close-help-btn" class="mt-6 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition w-full">
+                Понятно, начать обучение!
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Database of flash cards
+        const cardsDatabase = {
+            general: [
+                {
+                    question: "Что такое гидросфера?",
+                    hint: "Это одна из оболочек Земли",
+                    answer: "Водная оболочка Земли",
+                    explanation: "Гидросфера включает в себя все воды Земли: океаны, моря, реки, озера, подземные воды, ледники и водяной пар в атмосфере."
+                },
+                {
+                    question: "Как называется самая длинная река в мире?",
+                    hint: "Находится в Африке",
+                    answer: "Нил",
+                    explanation: "Нил протекает в Африке и имеет длину около 6,650 км. Однако некоторые исследования показывают, что Амазонка может быть длиннее."
+                },
+                {
+                    question: "Что измеряет шкала Рихтера?",
+                    hint: "Связано с природными явлениями",
+                    answer: "Силу землетрясений",
+                    explanation: "Шкала Рихтера измеряет магнитуду землетрясений. Каждое увеличение на 1 балл означает 10-кратное увеличение амплитуды колебаний."
+                },
+                {
+                    question: "Как называется процесс образования гор?",
+                    hint: "Начинается на 'о'",
+                    answer: "Орогенез",
+                    explanation: "Орогенез - это процесс горообразования, который происходит в результате тектонических движений земной коры."
+                },
+                {
+                    question: "Что такое архипелаг?",
+                    hint: "Связано с островами",
+                    answer: "Группа островов",
+                    explanation: "Архипелаг - это группа островов, расположенных близко друг к другу и имеющих общее происхождение. Примеры: Японские острова, Мальдивы."
+                },
+                {
+                    question: "Как называется самая глубокая точка Мирового океана?",
+                    hint: "Находится в Тихом океане",
+                    answer: "Марианский желоб",
+                    explanation: "Марианский желоб расположен в западной части Тихого океана, его глубина достигает около 11,034 метров."
+                },
+                {
+                    question: "Что такое меридиан?",
+                    hint: "Связано с системой координат",
+                    answer: "Линия долготы",
+                    explanation: "Меридиан - это воображаемая линия, соединяющая Северный и Южный полюса. Нулевой меридиан проходит через Гринвич."
+                },
+                {
+                    question: "Как называется процесс превращения воды в пар?",
+                    hint: "Начинается на 'и'",
+                    answer: "Испарение",
+                    explanation: "Испарение - это процесс перехода воды из жидкого состояния в газообразное (водяной пар)."
+                },
+                {
+                    question: "Что такое биосфера?",
+                    hint: "Связано с живыми организмами",
+                    answer: "Оболочка Земли, населенная живыми организмами",
+                    explanation: "Биосфера включает все живые организмы и их среду обитания: часть атмосферы, гидросферу и верхнюю часть литосферы."
+                },
+                {
+                    question: "Как называется наука, изучающая климат?",
+                    hint: "Начинается на 'к'",
+                    answer: "Климатология",
+                    explanation: "Климатология - это наука, изучающая климат, его формирование, географическое распределение и изменение во времени."
+                }
+            ],
+            continents: [
+                {
+                    question: "Какой континент самый большой по площади?",
+                    hint: "Находится в северном полушарии",
+                    answer: "Евразия",
+                    explanation: "Евразия - это крупнейший континент на Земле, его площадь составляет около 54 млн км². Он включает Европу и Азию."
+                },
+                {
+                    question: "Какой континент самый сухой?",
+                    hint: "Находится в южном полушарии",
+                    answer: "Антарктида",
+                    explanation: "Антарктида считается самым сухим континентом, так как большая часть осадков там выпадает в виде снега и не тает."
+                },
+                {
+                    question: "Какой континент называют 'Новым Светом'?",
+                    hint: "Открыт в 1492 году",
+                    answer: "Америка",
+                    explanation: "Америку называют 'Новым Светом', так как она была неизвестна европейцам до конца XV века."
+                },
+                {
+                    question: "Какой континент не имеет постоянного населения?",
+                    hint: "Находится на юге",
+                    answer: "Антарктида",
+                    explanation: "Антарктида не имеет постоянного населения, только временные научные станции с персоналом, который меняется."
+                },
+                {
+                    question: "Какой континент самый маленький?",
+                    hint: "Находится в южном полушарии",
+                    answer: "Австралия",
+                    explanation: "Австралия - это самый маленький континент с площадью около 7,7 млн км². Она также является страной-континентом."
+                },
+                {
+                    question: "Какой континент самый густонаселенный?",
+                    hint: "Находится в восточном полушарии",
+                    answer: "Азия",
+                    explanation: "Азия - самый густонаселенный континент, здесь проживает около 60% населения Земли."
+                },
+                {
+                    question: "Какой континент пересекают все меридианы?",
+                    hint: "Находится на юге",
+                    answer: "Антарктида",
+                    explanation: "Антарктиду пересекают все меридианы, так как она расположена вокруг Южного полюса."
+                },
+                {
+                    question: "Какой континент имеет самую длинную береговую линию?",
+                    hint: "Находится в северном полушарии",
+                    answer: "Евразия",
+                    explanation: "Евразия имеет самую длинную береговую линию благодаря сложной конфигурации и множеству островов."
+                },
+                {
+                    question: "Какой континент самый жаркий?",
+                    hint: "Находится в северном полушарии",
+                    answer: "Африка",
+                    explanation: "Африка считается самым жарким континентом, здесь находится самое жаркое место на Земле - пустыня Сахара."
+                },
+                {
+                    question: "Какой континент имеет наибольшее количество стран?",
+                    hint: "Находится в восточном полушарии",
+                    answer: "Африка",
+                    explanation: "Африка насчитывает 54 признанных государства, что делает ее континентом с наибольшим количеством стран."
+                }
+            ],
+            countries: [
+                {
+                    question: "Какая страна самая большая по площади?",
+                    hint: "Находится в Евразии",
+                    answer: "Россия",
+                    explanation: "Россия - самая большая страна в мире с площадью около 17,1 млн км², что составляет примерно 11% суши Земли."
+                },
+                {
+                    question: "Какая страна имеет самое большое население?",
+                    hint: "Находится в Азии",
+                    answer: "Китай",
+                    explanation: "Китай - самая населенная страна с более чем 1,4 млрд человек. Однако Индия скоро может обогнать Китай по этому показателю."
+                },
+                {
+                    question: "Какая страна состоит из более чем 17,000 островов?",
+                    hint: "Находится в Юго-Восточной Азии",
+                    answer: "Индонезия",
+                    explanation: "Индонезия - крупнейшее островное государство, состоящее из 17,508 островов, из которых около 6,000 населены."
+                },
+                {
+                    question: "Какая страна не имеет выхода к морю?",
+                    hint: "Находится в Центральной Азии",
+                    answer: "Казахстан",
+                    explanation: "Казахстан - самая большая страна в мире, не имеющая выхода к открытому морю (хотя имеет выход к Каспийскому морю, которое является озером)."
+                },
+                {
+                    question: "Какая страна имеет самую длинную береговую линию?",
+                    hint: "Находится в Северной Америке",
+                    answer: "Канада",
+                    explanation: "Канада имеет самую длинную береговую линию в мире - около 202,080 км, благодаря множеству островов в Арктике."
+                },
+                {
+                    question: "Какая страна расположена на двух континентах?",
+                    hint: "Столица - Анкара",
+                    answer: "Турция",
+                    explanation: "Турция расположена и в Европе (небольшая часть), и в Азии (большая часть). Стамбул - единственный город в мире, расположенный на двух континентах."
+                },
+                {
+                    question: "Какая страна имеет наибольшее количество официальных языков?",
+                    hint: "Находится в Южной Африке",
+                    answer: "Южная Африка",
+                    explanation: "Южная Африка имеет 11 официальных языков, что является мировым рекордом."
+                },
+                {
+                    question: "Какая страна самая маленькая по площади?",
+                    hint: "Находится внутри Италии",
+                    answer: "Ватикан",
+                    explanation: "Ватикан - самое маленькое государство в мире с площадью всего 0,44 км². Это центр католической церкви."
+                },
+                {
+                    question: "Какая страна имеет наибольшее количество часовых поясов?",
+                    hint: "Находится в Евразии",
+                    answer: "Франция",
+                    explanation: "Франция имеет 12 часовых поясов благодаря своим заморским территориям, разбросанным по всему миру."
+                },
+                {
+                    question: "Какая страна имеет флаг, который не является прямоугольным?",
+                    hint: "Находится в Южной Азии",
+                    answer: "Непал",
+                    explanation: "Непал - единственная страна в мире, чей национальный флаг не является прямоугольником. Он состоит из двух треугольников."
+                }
+            ],
+            records: [
+                {
+                    question: "Где находится самое глубокое озеро в мире?",
+                    hint: "Находится в России",
+                    answer: "Байкал",
+                    explanation: "Озеро Байкал в России - самое глубокое в мире (1,642 м) и содержит около 20% мировых запасов пресной воды."
+                },
+                {
+                    question: "Какая пустыня самая большая в мире?",
+                    hint: "Находится в Африке",
+                    answer: "Сахара",
+                    explanation: "Пустыня Сахара - самая большая жаркая пустыня в мире с площадью около 9,2 млн км², что сопоставимо с площадью Китая."
+                },
+                {
+                    question: "Какой водопад самый высокий в мире?",
+                    hint: "Находится в Южной Америке",
+                    answer: "Анхель",
+                    explanation: "Водопад Анхель в Венесуэле имеет высоту 979 метров, что делает его самым высоким водопадом в мире."
+                },
+                {
+                    question: "Какая гора самая высокая в мире?",
+                    hint: "Находится в Азии",
+                    answer: "Эверест (Джомолунгма)",
+                    explanation: "Гора Эверест (Джомолунгма) - самая высокая гора над уровнем моря (8,848 м). Однако если считать от основания, то Мауна-Кеа на Гавайях выше."
+                },
+                {
+                    question: "Какая река самая длинная в мире?",
+                    hint: "Находится в Южной Америке",
+                    answer: "Амазонка",
+                    explanation: "Амазонка считается самой длинной рекой в мире (около 7,062 км), хотя некоторые источники отдают первенство Нилу."
+                },
+                {
+                    question: "Где находится самое соленое озеро в мире?",
+                    hint: "Находится в Антарктиде",
+                    answer: "Озеро Дон-Жуан",
+                    explanation: "Озеро Дон-Жуан в Антарктиде имеет соленость более 40%, что делает его самым соленым водоемом на Земле."
+                },
+                {
+                    question: "Где находится самое холодное населенное место на Земле?",
+                    hint: "Находится в России",
+                    answer: "Оймякон",
+                    explanation: "Оймякон в России - самое холодное постоянно населенное место на Земле. Температура зимой может опускаться ниже -50°C."
+                },
+                {
+                    question: "Где находится самое влажное место на Земле?",
+                    hint: "Находится в Азии",
+                    answer: "Черапунджи",
+                    explanation: "Черапунджи в Индии - одно из самых влажных мест на Земле с годовым количеством осадков до 26,000 мм."
+                },
+                {
+                    question: "Где находится самое большое по площади государство в мире?",
+                    hint: "Находится в Евразии",
+                    answer: "Россия",
+                    explanation: "Россия - самое большое по площади государство в мире (около 17,1 млн км²), занимающее около 11% суши Земли."
+                },
+                {
+                    question: "Где находится самое большое по населению государство в мире?",
+                    hint: "Находится в Азии",
+                    answer: "Китай",
+                    explanation: "Китай - самое населенное государство в мире с более чем 1,4 млрд человек, хотя Индия скоро может обогнать его по этому показателю."
+                }
+            ]
+        };
+
+        // App state
+        let state = {
+            currentCategory: null,
+            currentCardIndex: 0,
+            learnedCards: {
+                general: Array(10).fill(false),
+                continents: Array(10).fill(false),
+                countries: Array(10).fill(false),
+                records: Array(10).fill(false)
+            },
+            cardDifficulty: {
+                general: Array(10).fill(null),
+                continents: Array(10).fill(null),
+                countries: Array(10).fill(null),
+                records: Array(10).fill(null)
+            },
+            currentCards: []
+        };
+
+        // DOM elements
+        const categoryButtons = document.querySelectorAll('.category-btn');
+        const flashCard = document.getElementById('flash-card');
+        const cardQuestion = document.getElementById('card-question');
+        const cardHint = document.getElementById('card-hint');
+        const cardAnswer = document.getElementById('card-answer');
+        const cardExplanation = document.getElementById('card-explanation');
+        const prevCardBtn = document.getElementById('prev-card');
+        const nextCardBtn = document.getElementById('next-card');
+        const currentCardNumber = document.getElementById('current-card-number');
+        const totalCards = document.getElementById('total-cards');
+        const categoryProgress = document.getElementById('category-progress');
+        const globalProgress = document.getElementById('global-progress');
+        const progressPercent = document.getElementById('progress-percent');
+        const randomCardBtn = document.getElementById('random-card');
+        const reviewHardBtn = document.getElementById('review-hard');
+        const quickNavButtons = document.querySelectorAll('.quick-nav-btn');
+        const difficultyButtons = document.querySelectorAll('.difficulty-btn');
+        const statsBtn = document.getElementById('stats-btn');
+        const statsModal = document.getElementById('stats-modal');
+        const closeStats = document.getElementById('close-stats');
+        const modalGlobalProgress = document.getElementById('modal-global-progress');
+        const modalGlobalPercent = document.getElementById('modal-global-percent');
+        const learnedCards = document.getElementById('learned-cards');
+        const totalCardsStats = document.getElementById('total-cards-stats');
+        const generalProgress = document.getElementById('general-progress');
+        const continentsProgress = document.getElementById('continents-progress');
+        const countriesProgress = document.getElementById('countries-progress');
+        const recordsProgress = document.getElementById('records-progress');
+        const generalBar = document.getElementById('general-bar');
+        const continentsBar = document.getElementById('continents-bar');
+        const countriesBar = document.getElementById('countries-bar');
+        const recordsBar = document.getElementById('records-bar');
+        const easyCards = document.getElementById('easy-cards');
+        const mediumCards = document.getElementById('medium-cards');
+        const hardCards = document.getElementById('hard-cards');
+        const resetStats = document.getElementById('reset-stats');
+        const floatingBtn = document.getElementById('floating-btn');
+        const helpModal = document.getElementById('help-modal');
+        const closeHelp = document.getElementById('close-help');
+        const closeHelpBtn = document.getElementById('close-help-btn');
+
+        // Initialize app
+        function init() {
+            // Set event listeners
+            categoryButtons.forEach(btn => {
+                btn.addEventListener('click', () => selectCategory(btn.dataset.category));
+            });
+
+            flashCard.addEventListener('click', flipCard);
+            prevCardBtn.addEventListener('click', showPrevCard);
+            nextCardBtn.addEventListener('click', showNextCard);
+            randomCardBtn.addEventListener('click', showRandomCard);
+            reviewHardBtn.addEventListener('click', showHardCards);
+            
+            quickNavButtons.forEach(btn => {
+                btn.addEventListener('click', () => showCard(parseInt(btn.dataset.index)));
+            });
+            
+            difficultyButtons.forEach(btn => {
+                btn.addEventListener('click', () => rateDifficulty(btn.dataset.difficulty));
+            });
+            
+            statsBtn.addEventListener('click', showStatsModal);
+            closeStats.addEventListener('click', hideStatsModal);
+            resetStats.addEventListener('click', resetStatistics);
+            floatingBtn.addEventListener('click', showHelpModal);
+            closeHelp.addEventListener('click', hideHelpModal);
+            closeHelpBtn.addEventListener('click', hideHelpModal);
+            
+            // Load state from localStorage if available
+            loadState();
+            
+            // Update UI
+            updateTotalCards();
+            updateGlobalProgress();
+            
+            // Show help modal on first visit
+            if (!localStorage.getItem('geographyFlashCardsVisited')) {
+                showHelpModal();
+                localStorage.setItem('geographyFlashCardsVisited', 'true');
+            }
+        }
+
+        // Select category
+        function selectCategory(category) {
+            state.currentCategory = category;
+            state.currentCardIndex = 0;
+            state.currentCards = cardsDatabase[category];
+            
+            // Update active category button
+            categoryButtons.forEach(btn => {
+                if (btn.dataset.category === category) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            // Update UI
+            totalCards.textContent = state.currentCards.length;
+            updateCardDisplay();
+            updateCategoryProgress();
+            
+            // Enable navigation buttons
+            prevCardBtn.disabled = false;
+            nextCardBtn.disabled = false;
+        }
+
+        // Flip card
+        function flipCard() {
+            if (!state.currentCategory) return;
+            
+            flashCard.classList.toggle('flipped');
+            
+            // Mark card as learned if flipping to back
+            if (flashCard.classList.contains('flipped')) {
+                state.learnedCards[state.currentCategory][state.currentCardIndex] = true;
+                saveState();
+                updateGlobalProgress();
+                updateCategoryProgress();
+            }
+        }
+
+        // Show previous card
+        function showPrevCard() {
+            if (state.currentCardIndex > 0) {
+                state.currentCardIndex--;
+                updateCardDisplay();
+            }
+        }
+
+        // Show next card
+        function showNextCard() {
+            if (state.currentCardIndex < state.currentCards.length - 1) {
+                state.currentCardIndex++;
+                updateCardDisplay();
+            }
+        }
+
+        // Show specific card
+        function showCard(index) {
+            if (index >= 0 && index < state.currentCards.length) {
+                state.currentCardIndex = index;
+                updateCardDisplay();
+            }
+        }
+
+        // Show random card from all categories
+        function showRandomCard() {
+            // Get all categories
+            const categories = Object.keys(cardsDatabase);
+            
+            // Select random category
+            const randomCategory = categories[Math.floor(Math.random() * categories.length)];
+            
+            // Select random card from that category
+            const randomIndex = Math.floor(Math.random() * cardsDatabase[randomCategory].length);
+            
+            // Select category and card
+            selectCategory(randomCategory);
+            showCard(randomIndex);
+        }
+
+        // Show hard cards
+        function showHardCards() {
+            if (!state.currentCategory) return;
+            
+            // Find first hard card in current category
+            const hardIndex = state.cardDifficulty[state.currentCategory].findIndex(d => d === 'hard');
+            
+            if (hardIndex !== -1) {
+                showCard(hardIndex);
+            } else {
+                alert('В этой категории нет карточек, отмеченных как сложные!');
+            }
+        }
+
+        // Update card display
+        function updateCardDisplay() {
+            if (!state.currentCategory || state.currentCards.length === 0) return;
+            
+            const card = state.currentCards[state.currentCardIndex];
+            
+            // Reset card to front
+            flashCard.classList.remove('flipped');
+            
+            // Update card content
+            cardQuestion.textContent = card.question;
+            cardHint.textContent = card.hint;
+            cardAnswer.textContent = card.answer;
+            cardExplanation.textContent = card.explanation;
+            
+            // Update card number
+            currentCardNumber.textContent = state.currentCardIndex + 1;
+            
+            // Update navigation buttons state
+            prevCardBtn.disabled = state.currentCardIndex === 0;
+            nextCardBtn.disabled = state.currentCardIndex === state.currentCards.length - 1;
+            
+            // Update quick navigation buttons
+            quickNavButtons.forEach((btn, index) => {
+                if (index === state.currentCardIndex) {
+                    btn.classList.add('bg-blue-500', 'text-white');
+                    btn.classList.remove('bg-gray-200', 'hover:bg-gray-300');
+                } else {
+                    btn.classList.remove('bg-blue-500', 'text-white');
+                    btn.classList.add('bg-gray-200', 'hover:bg-gray-300');
+                }
+            });
+        }
+
+        // Rate card difficulty
+        function rateDifficulty(difficulty) {
+            if (!state.currentCategory) return;
+            
+            state.cardDifficulty[state.currentCategory][state.currentCardIndex] = difficulty;
+            saveState();
+            updateStatsModal();
+            
+            // Show next card after rating
+            if (state.currentCardIndex < state.currentCards.length - 1) {
+                setTimeout(() => {
+                    state.currentCardIndex++;
+                    updateCardDisplay();
+                }, 500);
+            }
+        }
+
+        // Update category progress
+        function updateCategoryProgress() {
+            if (!state.currentCategory) return;
+            
+            const learned = state.learnedCards[state.currentCategory].filter(Boolean).length;
+            const total = state.learnedCards[state.currentCategory].length;
+            const percent = Math.round((learned / total) * 100);
+            
+            categoryProgress.style.width = `${percent}%`;
+        }
+
+        // Update global progress
+        function updateGlobalProgress() {
+            let totalLearned = 0;
+            let totalCards = 0;
+            
+            for (const category in state.learnedCards) {
+                totalLearned += state.learnedCards[category].filter(Boolean).length;
+                totalCards += state.learnedCards[category].length;
+            }
+            
+            const percent = Math.round((totalLearned / totalCards) * 100);
+            
+            globalProgress.style.width = `${percent}%`;
+            progressPercent.textContent = `${percent}%`;
+        }
+
+        // Update total cards count
+        function updateTotalCards() {
+            let count = 0;
+            
+            for (const category in cardsDatabase) {
+                count += cardsDatabase[category].length;
+            }
+            
+            totalCardsStats.textContent = count;
+        }
+
+        // Show stats modal
+        function showStatsModal() {
+            updateStatsModal();
+            statsModal.classList.remove('hidden');
+        }
+
+        // Hide stats modal
+        function hideStatsModal() {
+            statsModal.classList.add('hidden');
+        }
+
+        // Update stats modal content
+        function updateStatsModal() {
+            // Global progress
+            let totalLearned = 0;
+            let totalCards = 0;
+            
+            for (const category in state.learnedCards) {
+                totalLearned += state.learnedCards[category].filter(Boolean).length;
+                totalCards += state.learnedCards[category].length;
+            }
+            
+            const globalPercent = Math.round((totalLearned / totalCards) * 100);
+            modalGlobalProgress.style.width = `${globalPercent}%`;
+            modalGlobalPercent.textContent = `${globalPercent}%`;
+            learnedCards.textContent = totalLearned;
+            
+            // Category progress
+            const generalLearned = state.learnedCards.general.filter(Boolean).length;
+            const continentsLearned = state.learnedCards.continents.filter(Boolean).length;
+            const countriesLearned = state.learnedCards.countries.filter(Boolean).length;
+            const recordsLearned = state.learnedCards.records.filter(Boolean).length;
+            
+            const generalPercent = Math.round((generalLearned / state.learnedCards.general.length) * 100);
+            const continentsPercent = Math.round((continentsLearned / state.learnedCards.continents.length) * 100);
+            const countriesPercent = Math.round((countriesLearned / state.learnedCards.countries.length) * 100);
+            const recordsPercent = Math.round((recordsLearned / state.learnedCards.records.length) * 100);
+            
+            generalProgress.textContent = `${generalPercent}%`;
+            continentsProgress.textContent = `${continentsPercent}%`;
+            countriesProgress.textContent = `${countriesPercent}%`;
+            recordsProgress.textContent = `${recordsPercent}%`;
+            
+            generalBar.style.width = `${generalPercent}%`;
+            continentsBar.style.width = `${continentsPercent}%`;
+            countriesBar.style.width = `${countriesPercent}%`;
+            recordsBar.style.width = `${recordsPercent}%`;
+            
+            // Difficulty stats
+            let easyCount = 0;
+            let mediumCount = 0;
+            let hardCount = 0;
+            
+            for (const category in state.cardDifficulty) {
+                easyCount += state.cardDifficulty[category].filter(d => d === 'easy').length;
+                mediumCount += state.cardDifficulty[category].filter(d => d === 'medium').length;
+                hardCount += state.cardDifficulty[category].filter(d => d === 'hard').length;
+            }
+            
+            easyCards.textContent = easyCount;
+            mediumCards.textContent = mediumCount;
+            hardCards.textContent = hardCount;
+        }
+
+        // Reset statistics
+        function resetStatistics() {
+            if (confirm('Вы уверены, что хотите сбросить всю статистику? Это действие нельзя отменить.')) {
+                state.learnedCards = {
+                    general: Array(10).fill(false),
+                    continents: Array(10).fill(false),
+                    countries: Array(10).fill(false),
+                    records: Array(10).fill(false)
+                };
+                
+                state.cardDifficulty = {
+                    general: Array(10).fill(null),
+                    continents: Array(10).fill(null),
+                    countries: Array(10).fill(null),
+                    records: Array(10).fill(null)
+                };
+                
+                saveState();
+                updateGlobalProgress();
+                updateCategoryProgress();
+                updateStatsModal();
+                
+                if (state.currentCategory) {
+                    updateCardDisplay();
+                }
+            }
+        }
+
+        // Show help modal
+        function showHelpModal() {
+            helpModal.classList.remove('hidden');
+        }
+
+        // Hide help modal
+        function hideHelpModal() {
+            helpModal.classList.add('hidden');
+        }
+
+        // Save state to localStorage
+        function saveState() {
+            localStorage.setItem('geographyFlashCardsState', JSON.stringify(state));
+        }
+
+        // Load state from localStorage
+        function loadState() {
+            const savedState = localStorage.getItem('geographyFlashCardsState');
+            
+            if (savedState) {
+                state = JSON.parse(savedState);
+            }
+        }
+
+        // Initialize the app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
